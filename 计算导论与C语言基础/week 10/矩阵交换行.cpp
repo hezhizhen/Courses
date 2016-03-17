@@ -34,7 +34,7 @@ int main()
 		{
 			for(int j=0;j<5;j++)
 			{
-				cout << setw(4) << a[i][j] << " ";
+				cout << setw(4) << a[i][j];
 			}
 			cout << endl;
 		}
