@@ -43,19 +43,198 @@
 
 ### 1.2.3 级数
 
+- $\sum\limits_{i=0}^N2^i=2^{N+1}-1$
+- $\sum\limits_{i=0}^NA^i=\frac{A^{N+1}-1}{A-1}$
+- if $0<A<1$, then $\sum\limits_{i=0}^NA^i\le\frac{1}{1-A}$
+- 几何级数
+- $\sum\limits_{i=1}^{\infty}\frac{i}{2^i}=2$
+- 算术级数：$\sum\limits_{i=1}^Ni=\frac{N(N+1)}{2}\approx\frac{N^2}{2}$
+- $\sum\limits_{i=1}^Ni^2=\frac{N(N+1)(2N+1)}{6}\approx\frac{N^3}{3}$
+- $\sum\limits_{i=1}^Ni^k\approx\frac{N^{k+1}}{|k+1|}, k\neq-1$
+- 调和数$H_N$: $H_N=\sum\limits_{i=1}^N\frac{1}{i}\approx log_eN$ (近似误差趋向于$\gamma\approx0.57721566$, 欧拉常数)
+- 调和数的和为调和和
+- $\sum\limits_{i=1}^Nf(N)=Nf(N)$
+- $\sum\limits_{i=n_0}^Nf(i)=\sum\limits_{i=1}^Nf(i)-\sum\limits_{i=1}^{n_0-1}f(i)$
+
 ### 1.2.4 模运算
+
+- 如果N整除A-B，则A与B模N**同余**，记为$A\equiv B$ (mod N)
+- 若$A\equiv B$ (mod N), 则$A+C\equiv B+C$ (mod N), 以及$AD\equiv BD$ (mod N)
 
 ### 1.2.5 证明方法
 
+两种常见方法：归纳法证明 & 反证法证明 (反例证明不成立)
+
+**归纳法证明**
+
+- 基准情形(base case): 确定定理对于某个（些）小的（通常是退化的）值的正确性
+- 归纳假设(inductive hypothesis): 假设定理对直到某个有限数k的所有情况都是成立的，然后使用这个假设证明定理对下一个值（通常是k+1）也是成立的
+- 结论: 定理得证（在k是有限的情形下）
+
+**反例**
+
+**反证法证明**
+
+通过假设定理不成立，然后证明该假设导致某个已知的性质不成立，从而证明原假设是错误的
+
 ## 1.3 递归的简单介绍
+
+递归：当一个函数用自身来定义时就称为是*递归*的
+
+- 基准情况：即此时函数的值可以直接算出而不用求助递归
+- 递归调用：递归调用将一直进行到基准情况出现为止
+
+对于递归程序，不存在“特殊情形”
+
+递归的四个基本法则：
+
+- 基准情形：必须总有某些基准的情形，它们不用递归就能求解
+- 不断推进：对于那些要被递归求解的情形，递归调用必须总能够朝着一个基准情形推进
+- 设计法则：假设所有的递归调用都能运行
+- 合成效益法则：在求解一个问题的同一实例时，切勿在不同的递归调用中做重复性的工作
 
 ## 1.4 C++类
 
 ### 1.4.1 基本class语法
 
+在C++中
+
+- 类由成员构成
+- 成员：可以是数据、函数（称为成员函数）
+- 类中的每一个实例都是一个对象
+- 每一个对象包含类中指定的数据成员
+- 成员函数作用于对象，通常被称为方法
+
+```c++
+// A class for simulating an integer memory cell
+
+class IntCell
+{
+	public:
+		// construct the IntCell
+		// initial value is 0
+		IntCell()
+		{ storedValue = 0; }
+		
+		//construct the IntCell
+		// initial value is initialValue
+		IntCell(int initialValue)
+		{ storedValue = initialValue; }
+		
+		//return the stored value
+		int read()
+		{ return storedValue; }
+		
+		//change the stored value to x
+		void write(int x)
+		{ storedValue = x; }
+		
+	private:
+		int storedValue;
+};
+```
+
+- 两个标号：public & private，声明类成员的可见性
+- public的类成员可以被任何类中的任何方法访问
+- private的类成员仅可以被它所在类的方法访问
+- 数据成员声明为private，这样可以禁止对该类内部细节的访问；作为一般用途的方法则定义为public
+- 上述称为**信息隐藏**
+- 构造函数是描述如何构建类的实例的方法
+- 如果没有显式定义的构造函数，则可以自动生成使用编程语言的默认值来初始化数据成员的构造函数
+
 ### 1.4.2 特别的构造函数语法与访问函数
 
+改进的IntCell类
+
+```c++
+// a class for simulating an integer memory cell
+
+class IntCell
+{
+	public:
+		explicit IntCell (int initialValue = 0)
+			: storedValue ( initialValue ) { }
+		int read() const
+			{ return storedValue; }
+		void write (int x)
+			{ storedValue = x; }
+	private:
+		int storedValue;
+};
+```
+
+- 默认参数：定义了两个IntCell构造函数，一个接受initialValue，另一个是零参数构造函数，后者是隐含的。默认值0意味着如果没有确定的参数，则使用0
+- 初始化列表：用来直接初始化数据成员 （const意味着在对象呗构造后就不能再改变）
+- explicit构造函数：所有的单参数的构造函数都必须是explicit，以避免后台的类型转换 （通常单参数构造函数定义了一个隐式类型转换，该转换创建了一个临时对象，从而使赋值或函数参数变成兼容的）
+- 常量成员函数：访问函数——只进行检测但不改变其对象的状态的成员函数；修改函数——改变其对象的状态的成员函数。访问函数不能用于常量对象(why?)，所有的成员函数默认都是修改函数，只有跟在参数类型列表结尾圆括号后的const才表示一个访问函数
+
 ### 1.4.3 接口与实现的分离
+
+- 接口：列出了类及其成员（数据和函数）
+- 实现：提供了函数的具体实现
+- 接口与实现分离
+
+类IntCell的接口
+
+```c++
+#ifndef IntCell_H
+#define IntCell_H
+
+class IntCell
+{
+	public:
+		explicit IntCell (int initialValue=0);
+		int read() const;
+		void write (int x);
+	
+	private:
+		int storedValue;
+};
+
+#endif
+```
+
+类IntCell的接口的实现
+
+```c++
+#include "IntCell.h"
+
+IntCell::IntCell( int initialValue) : storedValue (initialValue)
+{
+}
+
+int IntCell::read( ) const
+{
+	return storedValue;
+}
+
+void IntCell::write (int x)
+{
+	storedValue = x;
+}
+```
+
+一个使用IntCell的main例程
+
+```c++
+#include <iostream>
+#include "IntCell.h"
+using namespace std;
+
+int main()
+{
+	IntCell m;// or, IntCell m(0); but not IntCell m();
+	m.write(5);
+	cout << "Cell contents: " << m.read() << endl;
+	
+	return 0;
+}
+```
+
+- 预处理命令：接口通常放在以.h结尾的文件中，需要接口信息的源代码必须#include接口文件。编译一个文件时一个接口被读两遍是非法的，所以每个头文件在读类接口时都定义一个预处理器来定义一个符号，符号通常都是文件名。接口文件第一行检测该符号是否是未定义的
+- 作用域运算符：实现文件通常以.cpp、.cc或者.c结尾，其中的成员函数都必须声明为类的一部分，否则函数就会被认为是全局的。语法是ClassName::member, ::称为作用域运算符
+- 签名必须精确匹配：实现的成员函数的签名必须与类接口中列出的签名精确匹配。默认参数仅在接口中被定义，在实现中则被忽略
+- 如基本类型一样声明对象：使用单参数构造函数的声明必须使用圆括号来赋初始值
 
 ### 1.4.4 vector和string
 
