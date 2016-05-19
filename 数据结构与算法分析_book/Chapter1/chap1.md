@@ -238,9 +238,60 @@ int main()
 
 ### 1.4.4 vector和string
 
+两个类：vector & string
+
+- vector：替代带来无穷麻烦的C++内置数组（其行为与基本类对象不同）
+- vector有确定的大小
+- string对象可以用==和<等进行比较
+- vector和string都可以用=进行复制
+
+```c++
+#include <iostream>
+#include <vector>
+using namespace std;
+
+int main()
+{
+	vector<int> squares(100);
+	
+	for(int i=0;i<squares.size();i++)
+		squares[i]=i*i;
+	
+	for(int i=0;i<squares.size();i++)
+		cout << i << " " << squares[i] << endl;
+	
+	return 0;
+}
+```
+
 ## 1.5 C++细节
 
 ### 1.5.1 指针
+
+指针变量：用来存储其他对象的存储地址的变量
+
+动态内存分配
+
+```c++
+int main()
+{
+	IntCell *m;
+	
+	m=new IntCell(0);
+	m->write(5);
+	cout << "Cell contents: " << m->read() << endl;
+	
+	delete m;
+	return 0;
+}
+```
+
+1. 声明：\*说明m是一个指针变量，用来指向一个IntCell对象。m的值是它所指向的对象的地址
+2. 动态对象创建：new返回指向新建对象的指针，C++中有两种方式可以使用零参数构造函数来创建对象 (m=new IntCell(); 或 m=new IntCell; 推荐后者)
+3. 垃圾收集及delete：C++没有垃圾收集，需要用delete操作来删除。内存泄漏（对象所占的内存不能释放）。能用自动变量的时候就不用new。
+4. 指针的赋值和比较：在C++中指针变量的赋值和比较是基于指针变量的值，即它所存储的地址，地址不同则不相等
+5. 通过指针访问对象的成员：通过->操作符
+6. 其他指针运算：<——当A指向的对象的存储地址低于B指向对象的存储地址时，A<B就为真；&——取地址运算符，返回对象所在的内存地址
 
 ### 1.5.2 参数传递
 
