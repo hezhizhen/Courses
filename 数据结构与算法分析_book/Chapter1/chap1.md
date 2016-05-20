@@ -295,34 +295,271 @@ int main()
 
 ### 1.5.2 参数传递
 
+许多编程语言都使用**按值调用**来传递参数，即将实参复制给形参
+
+C++三种传递参数的方式：
+
+1. 按常量引用调用
+2. 按值调用
+3. 引址调用
+
+参数传递机制的选用的判断：
+
+1. 如果形参必须能够改变实参的值，那么就必须*引址调用*
+2. 否则，实参的值不能被形参改变。如果参数类型是简单类型，使用*按值调用*；否则，参数类型是类类型的，一般*按常量引用调用*来传递
+
+参数传递选项：
+
+1. **按值调用**适用于不被函数更改的小对象
+2. **按常量引用调用**适用于不被函数更改的大对象
+3. **引址调用**适用于所有可以被函数更改的对象
+
 ### 1.5.3 返回值传递
+
+对象的返回也可以是**按值返回**和**按常量引用返回**，偶尔也用到**引址返回** （多数情况下不要使用引址返回）
 
 ### 1.5.4 引用变量
 
+**引用变量**和**常量引用变量**常用于参数传递，也可以用作局部变量或类的数据成员。在这些情况下，变量名就是它所引用的对象名的同义词。作为局部变量，它们避免了复制的成本。
+
+```c++
+const string & findMax (const vector<string> & arr)
+{
+	int maxIndex = 0;
+	
+	for(int i=1;i<arr.size();i++)
+		if(arr[maxIndex]<arr[i])
+			maxIndex=i;
+			
+	return arr[maxIndex];
+}
+```
+
+`string x = findMax(a)`比`const string &x = findMax(a)`要好
+
+引用变量可以用作类数据成员，引用必须被初始化
+
 ### 1.5.5 三大函数：析构函数、复制构造函数和operator=
+
+三个特殊函数：析构函数、复制构造函数、operator=
+
+1. 析构函数：当一个对象超过其作用域或执行delete时，就调用析构函数。析构函数的唯一任务就是释放使用对象时所占有的所有资源。默认操作是对每一个数据成员都使用析构函数
+2. 复制构造函数：特殊的构造函数，用于构造新的对象，被初始化为相同类型对象的一个副本。默认情况下，复制构造函数通过将复制构造函数依次应用到每一个数据成员来实现。简单的数据类型进行简单赋值就行
+	1. 声明的同时初始化
+	2. 使用按值调用传递（而不是通过&或const &）的对象无论如何都应该尽量少用
+	3. 通过值（而不是通过&或const &）返回对象
+3. operator=：当=应用于两个已经构造的对象时，就调用**复制赋值运算符**operator=
+4. 默认值带来的问题：主要问题出现在其数据成员是指针的类。
+	1. 浅复制：不复制指针所指向的对象，而是简单地复制指针的值，这样两个类实例都指向了同一个对象
+	2. 深复制：对整个对象进行克隆
+5. 当默认值不可用时：最常见的情况是，数据成员是指针类型的，并且被指对象通过某些对象成员函数（例如构造函数）来分配地址
 
 ### 1.5.6 C风格的数组和字符串
 
+数组名事实上是一个指向内存的指针，而不是基本类数组类型的。对数组使用=的结果是复制两个指针的值，而不是整个数组。
+
+内置的C风格的字符串是当做字符数组来实现的，特殊的终止符'\0'用以标识字符串逻辑上的结束，以避免传递字符串的长度值。
+
+- strcpy：字符串的复制
+- strcmp：字符串的比较
+- strlen：字符串的长度
+
+每个字符都可以通过数组索引操作来访问
+
 ## 1.6 模板
+
+考虑在数组中寻找最大项的问题
+
+类型无关：这种算法的逻辑与存储在数组中的项的类型无关，相同的逻辑可以适用于整数、浮点数或者具有可比性的任何类型
+
+类型无关的算法，也称为泛型算法
+
+- 函数模板
+- 类型模板
 
 ### 1.6.1 函数模板
 
+函数模板不是真正的函数，而是一个用以产生函数的公式
+
+```c++
+// Return the maximum item in array a
+// Assume a.size()>0
+// Comparable objects must provide operator< and operator=
+template <typename Comparable>
+const Comparable & findMax( const vector<Comparable> & a)
+{
+	int maxIndex = 0;
+	for(int i=1;i<a.size();i++)
+		if(a[maxIndex]<a[i])
+			maxIndex=i;
+	return a[maxIndex];
+}
+```
+
+含有template声明的行显示Comparable是模板实参，该实参可以被任何类型代替来生成函数
+
+代码膨胀：函数模板可以应需要而自动扩展，随着每种类型的扩展，都会生成附加代码
+
+模板的实参应该定义为非基本数据类型，这也是采用常量引用的原因
+
 ### 1.6.2 类模板
+
+```c++
+// A class for simulating a memory cell
+template <typename Object>
+class MemoryCell
+{
+	public:
+		explicit MemoryCell(const Object & initialValue=Object())
+			: storedValue(initialValue) { }
+		const Object & read() const
+			{ return storedValue;}
+		void write (const Object & x)
+			{ storedValue = x;}
+	private:
+		Object storedValue;
+};
+```
+
+- MemoryCell可以用于任何类型的Object，只要Object具有一个零参数构造函数、一个复制构造函数和一个复制赋值运算符
+- Object是通过常量引用来传递的
+- 构造函数的默认参数不是0
 
 ### 1.6.3 Object、Comparable和例子
 
+Object定义为含有一个零参数构造函数、一个operator=和一个复制构造函数
+
+```c++
+class Employee
+{
+	public:
+		void setValue(const string & n, double s)
+		{ name = n; salary = s;}
+		const string & getName() const
+		{ return name; }
+		void print (ostream & out) const
+		{ out << name << " (" << salary <<" )"; }
+		bool operator< (const Employee & rhs) const
+		{ return salary<rhs.salry; }
+		//other general accessors and mutators, not shown
+	private:
+		string name;
+		double salary;
+};
+
+//define an output operator for Employee
+ostream & operator<< (ostream & out, const Employee & rhs)
+{
+	rhs.print(out);
+	return out;
+}
+
+int main()
+{
+	vector<Employee> v(3);
+	v[0].setValue( "George Bush", 400000.00);
+	v[1].setValue( "Bill Gates", 2000000000.00);
+	v[2].setValue( "Dr.Phil:, 13000000.00);
+	cout << findMax(v) << endl;
+	
+	return 0;
+```
+
+- Comparable可以是类类型，比如Employee
+- 操作符重载，允许重新定义内置操作符的含义
+
 ### 1.6.4 函数对象
+
+对象同时包含数据和成员函数
+
+一个如传递参数一样传递函数的巧妙的办法是：定义一个包含零个数据和一个成员函数的类，然后传递这个类的实例
+
+函数对象
+
+函数调用操作符
 
 ### 1.6.5 类模板的分离编译
 
+在许多情况下，整个的类模板连同其实现都放置在一个单独的头文件中 （常见的标准库的实现在实现类模板时遵循这个原则）
+
 ## 1.7 使用矩阵
+
+称为矩阵的二维数组
+
+matrix类的基本思想：使用向量的向量
+
+对matrix定义operator[]，即数组索引操作符
 
 ### 1.7.1 数据成员、构造函数和基本访问函数
 
+矩阵通过被声明为vector<Object>的vector的array数据成员来表述
+
+```c++
+#ifndef MATRIX_H
+#define MATRIX_H
+
+#include <vector>
+using namespace std;
+
+template <typename Object>
+class matrix
+{
+	public:
+		matrix (int rows, int cols) : array(rows)
+		{
+			for(int i=0;i<rows;i++)
+				array[i].resize(cols);
+		}
+		const vector<Object> & operator[] (int row) const
+		{ return array[row];}
+		vector<Object> & operator[] (int row)
+		{ return array[row];}
+		
+		int numrows() const
+		{ return array.size();}
+		int numcols() const
+		{ return numrows() ? array[0].size():0;}
+	private:
+		vector< vector<Object> > array;
+};
+#endif
+```
+
+- 构造函数首先构造了array，通过rows来进入每个通过零参数构造函数构造的vector<Object>
+- 然后进入构造函数代码体中，每一行的大小都被重新定义为cols列
+
 ### 1.7.2 operator[]
+
+operator[]的思想：如果有一个matrix m，那么m[i]应该返回一个对应matrix m的行i的向量。因此，matrix operator[] 不是返回一个Object, 而是一个vector<Object>
+
+我们需要两个版本的operator[]，它们的区别仅仅在于返回类型不同
 
 ### 1.7.3 析构函数、复制赋值和复制构造函数
 
+vector处理了上述函数，所以，这些函数都是自动处理的
+
 ## 小结
 
+1. 面临大量输入时，一个算法所需要的运行时间是判断其好坏的重要标准
+2. 速度是相对的
+3. 对于某个问题在某台机器上运行很快的算法，对另一个问题或在另一台机器上运行就可能很慢
+
 ## 练习
+
+1. 编写一个程序解决选择问题。令k=N/2。画出表格显示你的程序对N取不同值时的运行时间
+2. 编写一个程序求解字谜游戏问题
+3. to be continued
+
+## 参考文献
+
+1. Discrete Mathematics with Algorithms
+2. Companion for Computer Science
+3. Introductory Combinatorics
+4. A Discipline of Programming
+5. Thinking in C++
+6. Concrete Mathematics
+7. The Science of Programming
+8. The Elements of Programming Style
+9. The Art of Computer Programming
+10. C++ Primer
+11. to be continued
