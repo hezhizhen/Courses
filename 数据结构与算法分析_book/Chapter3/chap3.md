@@ -156,11 +156,160 @@ void removeEveryOtherItem( Container & lst)
 
 *itr的结果不只是迭代器指向的项的值，也是该项本身
 
+下面的例程工作于vector和list，并且按线性时间运行。（是编写类型无关的泛型代码的一个极好的例子）
 
+```c++
+template <typename Container, typename Object>
+void change(Container & c, const Object & newValue)
+{
+	typename Container::iterator itr=c.begin();
+	while(itr != c.end())
+		*itr++ = newValue;
+}
+```
+
+(本小结并不是太懂)
 
 ## 3.4 向量的实现
 
+本节给出一个可用的vector类模板的实现
+
+C++基本数组的一些重要特性
+
+- 数据就是指向一块内存的指针变量；实际的数组的大小必须由程序员单独确定
+- 内存块可以通过new[]来分配，但是相应必须用delete[]来释放
+- 内存块的大小不能改变（但是可以定义一个新的具有更大内存块的数组，并且用原来的数组来将其初始化，然后原来的内存块就可以释放了）
+
+我们的类模板命名为Vector，其主要的细节为：
+
+- Vecotr将仍然是基本数组（通过一个指针变量来指向分配的内存块），数组的容量和当前的数组项数目存储在Vector中
+- Vector将通过实现“三大函数”，为复制构造函数和operator=提供深复制，同时也提供析构函数来回收基本数组
+- Vector将提供resize例程来改变Vector的大小；提供reserve例程来改变Vector的容量。容量的改变是通过为基本数组分配一个新的内存块，然后复制旧内存块的内容到新块中，再释放旧块的内存来实现的
+- Vector将提供operator[]的实现（典型实现由访问函数和修改函数两个版本）
+- Vector将提供基本的例程，例如size、empty、clear、back、pop_back和push_back
+- Vector将支持嵌套的iterator和const_iterator类型，并且提供关联的begin和end方法
+
+```c++
+template <typename Object>
+class Vector
+{
+	public:
+		explicit Vector(int initSize=0)
+			: theSize(initSize), theCapacity(initSize+SPARE_CAPACITY)
+			{objects=new Object[theCapacity];}
+		Vector(const Vector & rhs): objects(NULL)
+			{ operator=(rhs):}
+		~Vector()
+			{ delete [ ] objects;}
+		
+		const Vector & operator= (const Vector & rhs)
+		{
+			if(this != &rhs)
+			{
+				delete [ ] objects;
+				theSize = rhs.size();
+				theCapacity = rhs.theCapacity;
+				
+				objects = new Object[capacity()];
+				for(int k=0;k<size();k++)
+					objects[k] = rhs.objects[k];
+			}
+			return *this;
+		}
+		
+		void resize(int newSize)
+		{
+			if(newSize>theCapacity)
+				reserve(newSize*2+1);
+			theSize = newSize;
+		}
+		
+		void reserve(int newCapacity)
+		{
+			if(newCapacity<theSize)
+				return;
+			
+			Object *oldArray = objects;
+			
+			objects = new Object[newCapacity];
+			for(int k=0;k<theSize;k++)
+				objects[k] = oldArray[k];
+			
+			theCapacity = newCapacity;
+			
+			delete [] oldArray;
+		}
+		Object & operator[](int index)
+			{ return objects[index];}
+		const Object & operator[] (int index) const
+			{ return objects[index];}
+			
+		bool empty() const
+			{ return size()==0;}
+		int size() const
+			{ return theSize;}
+		int capacity() const
+			{ return theCapacity;}
+			
+		void push_back( const Object & x)
+		{
+			if(theSize==theCapacity)
+				reserve(2*theCapacity+1);
+			objects[theSize++]=x;
+		}
+		
+		void pop_back()
+			{ theSize--;}
+		
+		const Object & back() const
+			{ return objects[theSize-1];}
+		
+		typedef Object * iterator;
+		typedef const Object * const_iterator;
+		
+		iterator begin()
+			{ return &objects[0];}
+		const_iterator begin() const
+			{ return &objects[0];}
+		iterator end()
+			{ return &objects[size()];}
+		const_interator end() const
+			{ return &objects[size()];}
+		
+		enum { SPARE_CAPACITY=16;}
+		
+	praivate:
+		int theSize;
+		int theCapacity;
+		Object * objects;
+}；
+```
+
+- 第90-92行：Vector将其作为数据成员来存储大小、容量和基本数组
+- 第5-7行：构造函数允许使用者自己定义初始大小（默认值为0），然后初始化数据成员，并令容量比大小稍大一点（这样就可以在不改变容量的前提下执行push_back）
+- 第8-9行：复制构造函数调用operator=对已有的Vector进行复制
+- 第10-11行：析构函数回收基本数组的内存空间
+- 第13-26行：operator=.第15行混淆检验，第17行释放旧数组，第21行生成与所复制的Vector同样容量的新数组
+- 第28-33行：resize例程。在对容量进行扩展后，代码简单地设定数据成员theSize
+- 第35-49行：容量的扩展通过reserve例程来实现，该例程具有与operator[]大部分相同的逻辑。第42行分配一个新数组，第43和44行复制旧数组的内容，第48行回收旧数组
+- 第50-53行：两个版本的operator[]，通过确定index是否在0至size()-1的范围内（包括size()-1)，错误检测功能可以很容易地实现，如果没有在这个范围内就抛出一个异常
+- 第55-73行：许多小例程的实现，包括：empty、size、capacity、push_back、pop_back和back
+- 第75-85行：内置类型的iterator和const_iterator的声明以及两个begin方法和两个end方法的声明。第75-76行，声明的typedef语句是指针变量的别名，并且begin和end需要简单地分别返回代表第一个数组位置的内存地址和第一个无效的数组位置
+
 ## 3.5 表的实现
+
+本节提供了一个可用的list类模板的实现
+
+List类将要作为双向链表来实现，并且需要修改指向表两端的指针
+
+需要提供4个类：
+
+- List类本身，包含连接到表两端的链接、表的大小以及一系列的方法
+- Node类，一个结点包含数据和用来指向其前和其后的结点的指针，以及适当的构造函数
+- const_iterator类，抽象了位置的概念，是一个公有的嵌套类，存储指向当前结点的指针，并且提供基本迭代器操作的实现，以及所有的重载操作符
+- iterator类，抽象了位置的概念，是一个公有的嵌套类。除了operator*操作返回所指向项的引用，而不是该项的常量引用的功能外，iterator具有与const_iterator相同的功能。iterator可以用于任何需要使用const_iterator的例程里，反之不然。换句话说，iterator就是const_iterator
+
+迭代器类存储指向“当前结点”的指针，并且尾部标志是一个有效的位置，使得在表的末尾添加一个额外的结点来作为尾部标志成为可能。也可以在表的前端生成一个额外的结点，从而逻辑上作为开始标志。这些额外的结点是**哨兵结点**，在头部的结点是**表头结点**，在末端的结点是**尾结点**
 
 ## 3.6 栈ADT
 
