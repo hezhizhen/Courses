@@ -258,7 +258,67 @@ class BinarySearchTree
 
 ### 4.3.2 findMin和findMax
 
+这两个private例程分别返回指向树中包含最小元和最大元的结点的指针。
+
+- 执行findMin，从根开始并且只要有左儿子就向左进行，终止点就是最小的元素
+- findMax例程除分支朝向右儿子外其余过程相同
+
+```c++
+// Internal method to find the smallest item in a subtree t
+// Return node containing the smallest item
+BinaryNode * findMin(BinaryNode *t) const
+{
+	if(t==NULL)
+		return NULL;
+	if(t->left==NULL)
+		return t;
+	return findMin(t->left);
+}
+```
+
+```c++
+// Internal method to find the largest item in a subtree t
+// Return node containing the largest item
+BinaryNode * findMax( BinaryNode *t) const
+{
+	if(t!=NULL)
+		while(t->right!=NULL)
+			t=t->right;
+	return t;
+}
+```
+
+findMin用递归编写，而findMax用非递归编写
+
+处理空树的退化情况
+
 ### 4.3.3 insert
+
+为了将X插入到树T中，可以像使用contains那样沿着树查找。如果找到X，则什么也不做；否则，将X插入到遍历的路径上的最后一点上
+
+重复元的插入可以通过在结点记录一个附加字段以指示此数据元出现的频率来处理，这使整个树增加了某些附加空间，但是，却比将重复信息放到树中要好（将使树的深度变得很大）
+
+可以把具有相同键的所有结构保留在一个辅助数据结构中，如表或是另一棵查找树
+
+```c++
+// Internal method to insert into a subtree
+// x is the item to insert
+// t is the node that roots the subtree
+// Set the new root of the subtree
+void insert( const Comparable & x, BinaryNode *& t)
+{
+	if (t==NULL)
+		t=new BinaryNode(x,NULL,NULL);
+	else if(x<t->element)
+		insert(x,t->left);
+	else if( t->element < x)
+		insert (x, t->right);
+	else
+		; //Duplicate; do nothing
+}
+```
+
+上述为插入例程，递归地将x插入到适当的子树中。只有当一个新树叶生成的时候，t才改变
 
 ### 4.3.4 remove
 
