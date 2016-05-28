@@ -72,11 +72,11 @@ void FileSystem::listAll(int depth=0) const
 int FileSystem::size() const
 {
 	int totalSize = sizeOfThisFile();
-	
+
 	if(isDirectory())
 		for each file c in this directory (for each child)
 			totalSize += c.size();
-			
+
 	return totalSize;
 }
 ```
@@ -136,32 +136,32 @@ class BinarySearchTree
 		BinarySearchTree();
 		BinarySearchTree( const BinarySearchTree & rhs);
 		~BinarySearchTree();
-		
+
 		const Comparable & findMin() const;
 		const Comparable & findMax() const;
 		bool contains( const Comparable & x) const;
 		bool isEmpty() const;
 		void printTree() const;
-		
+
 		void makeEmpty();
 		void insert( const Comparable & x);
 		void remove( const Comparable & x);
-		
+
 		const BinarySearchTree & operator=( const BinarySearchTree & rhs);
-		
+
 	private:
 		struct BinaryNode
 		{
 			Comparable element;
 			BinaryNode *left;
 			BinaryNode *right;
-			
+
 			BinaryNode( const Comparable & theElement, BinaryNode *lt, BinaryNode *rt)
 				: element( theElement), left(lt), right(rt){}
 		};
-		
+
 		BinaryNode *root;
-		
+
 		void insert( const Comparable & x, BinaryNode * & t) const;
 		void remove( const Comparable & x, BinaryNode * & t) const;
 		BinaryNode * findMin( BinaryNode *t) const;
@@ -238,7 +238,7 @@ class BinarySearchTree
 		BinaryNode *root;
 		Comparator isLessThan;
 		// Same methods, with Object replacing Comparable
-		
+
 		// Internal method to test if an item is in a tree
 		// x is item to search for
 		// t is the node that roots the subtree
@@ -322,11 +322,131 @@ void insert( const Comparable & x, BinaryNode *& t)
 
 ### 4.3.4 remove
 
+删除的几种情况：
+
+- 结点是树叶：可以立即删除
+- 结点有一个儿子：该结点在其父结点调整它的链以绕过该结点后被删除（将该结点的父结点指向它的链改成指向它的儿子的链）
+- 结点具有两个儿子：用其右子树的最小的数据代替该结点的数据，并递归地删除那个结点
+
+```c++
+// Internal method to remove from a subtree
+// x is the item to remove
+// t is the node that roots the subtree
+// Set the new root of the subtree
+void remove( const Comparable & x, BinaryNode * & t)
+{
+	if(t==NULL)
+		return;// Item not found; do nothing
+	if(x<t->element)
+		remove(x,t->left);
+	else if (t->element<x)
+		remove(x,t->right);
+	else if(t->left!=NULL && t->right!=NULL)// two children
+	{
+		t->element = findMin(t->right)->element;
+		remove(t->element, t->right);
+	}
+	else
+	{
+		BinaryNode * oldNode = t;
+		t=(t->left!=NULL)?t->left:t->right;
+		delete oldNode;
+	}
+}
+```
+
+如果删除的次数不多，则策略为**懒惰删除**
+
+懒惰删除：当一个元素要被删除时，它仍留在树种，而只是做了个被删除的记号（这种做法在有重复项时很常见）
+
 ### 4.3.5 析构函数和复制赋值操作符
+
+析构函数调用makeEmpty
+
+共有的makeEmpty则简单调用私有的递归版本的makeEmpty
+
+```c++
+// Destructor for the tree
+~BinarySearchTree()
+{
+	makeEmpty();
+}
+// Internal method to make subtree empty.
+void makeEmpty( BinaryNode * & t)
+{
+	if(t != NULL)
+	{
+		makeEmpty(t->left);
+		makeEmpty(t->right);
+		delete t;
+	}
+	t->NULL;
+}
+```
+
+在递归地处理t的子树之后，对t调用delete，使所有结点都递归回收。最后t改为指向NULL
+
+复制赋值运算符首先调用makeEmpty来回收内存，然后进行rhs的复制
+
+```c++
+// Deep copy
+const BinarySearchTree & operator=(const BinarySearchTree & rhs)
+{
+	if(this != &rhs)
+	{
+		makeEmpty();
+		root=clone(rhs.root);
+	}
+	return *this;
+}
+// Internal method to clone subtree
+BinaryNode * clone (BinaryNode *t) const
+{
+	if(t==NULL)
+		return NULL;
+	return new BinaryNode(t->element, clone(t->left), clone(t->right));
+}
+```
 
 ### 4.3.6 平均情况分析
 
+所有操作（除了makeEmpty和operator=）的运行时间都是$O(d)$，其中d是包含所访问项的结点的深度
+
+to prove: 如果所有的插入序列都是等可能的，那么，树的所有结点的平均深度为$O(logN)$
+
+**内部路径长**：一棵树的所有结点的深度和
+
+令D(N)是具有N个结点的某棵树T的内部路径长，D(1)=0。一棵N结点树是由一棵i结点左子树和一棵(N-i-1)结点右子树以及深度为0的一个根节点组成，其中$0\leq i<N$,D(i)为根的左子树的内部路径长。但是在原树中，所有这些结点都要加深一层。同样的结论对右子树也成立。由此得到递推关系：$$D(N)=D(i)+D(N-i-1)+N-1$$
+
+如果所有子树的大小都是等可能出现，这对于**二叉查找树**是成立的（因为子树的大小只依赖于第一个插入到树中的元素的相对的秩），但对二叉树不成立。那么D(i)和D(N-i-1)的平均值都是$(1/N)\sum\limits_{j=0}^{N-1}D(j)$。于是$$D(N)=\frac{2}{N}[\sum\limits_{j=0}^{N-1}D(j)]+N-1$$
+
+最终得到的平均值为$D(N)=O(NlogN)$，因此任意结点预期的深度为$O(logN)$
+
+上面描述的删除算法会使得左子树比右子树深度深，因为总是用右子树的一个结点来代替删除的结点。已经证明，如果交替插入和删除$\Theta(N^2)$次，那么树的期望深度将是$\Theta(\sqrt{N})$。在删除操作中，可以通过随机选取右子树的最小元素或左子树的最大元素来代替被删除的元素以消除这种不平衡问题
+
+**平衡**条件：任何结点的深度不得过深
+
+**自调整**类结构
+
+在二叉查找树的情况下，对于任意单个运算我们不再保证$O(logN)$的时间界，但是可以证明任意连续M次操作在最坏的情形下花费时间$O(M logN)$
+
 ## 4.4 AVL树
+
+AVL树是带有**平衡条件**的二叉查找树
+
+必须保证树的深度是$O(logN)$，最简单的想法是要求左右子树具有相同的高度
+
+另一个平衡条件是要求每个结点都必须有相同高度的左子树和右子树，则只有具有$2^k-1$个结点的理想平衡树才能满足这条件
+
+空子树的高度定义为-1
+
+AVL树：每个结点的左子树和右子树的高度最多差1的二叉查找树
+
+在高度为h的AVL树中，最少结点数S(h)=S(h-1)+S(h-2)+1给出。对于h=0，S(h)=1; h=1, S(h)=2
+
+### 4.4.1 单旋转
+
+### 4.4.2 双旋转
 
 ## 4.5 伸展树
 
