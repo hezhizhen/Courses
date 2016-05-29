@@ -442,13 +442,127 @@ AVL树是带有**平衡条件**的二叉查找树
 
 AVL树：每个结点的左子树和右子树的高度最多差1的二叉查找树
 
-在高度为h的AVL树中，最少结点数S(h)=S(h-1)+S(h-2)+1给出。对于h=0，S(h)=1; h=1, S(h)=2
+在高度为h的AVL树中，最少结点数S(h)=S(h-1)+S(h-2)+1给出。对于h=0，S(h)=1; h=1, S(h)=2。函数S(h)与斐波那契数密切相关。
+
+除去可能的插入外，所有的树操作都可以以时间$O(logN)$执行。当进行插入时，需要更新通向根结点路径上那些结点的所有平衡信息，而插入操作隐含着困难的原因在于，插入一个结点可能破坏AVL树的特性，需要恢复平衡的性质之后才能认为插入完成。修正的操作叫做**旋转**
+
+只有那些从插入点到根结点的路径上的结点的平衡可能被改变，因为只有这些结点的子树可能发生变化
+
+把必须重新平衡的结点叫做$\alpha$。由于任意结点最多有两个儿子，因此高度不平衡时，$\alpha$点的两棵子树的高度差2.这种不平衡可能出现在下面4种情况中：
+
+- 对$\alpha$的左儿子的左子树进行一次插入
+- 对$\alpha$的左儿子的右子树进行一次插入
+- 对$\alpha$的右儿子的左子树进行一次插入
+- 对$\alpha$的右儿子的右子树进行一次插入
+
+第一种和最后一种情况是关于$\alpha$点的镜像对称，而中间两种情况也是关于$\alpha$点的镜像对称，因此只需要考虑两种情况即可
+
+第一种情况是插入发生在“外边”的情形，通过对树的一次**单旋转**可完成调整；第二种情况是插入发生在“内部”的情形，通过稍复杂的**双旋转**来处理
 
 ### 4.4.1 单旋转
 
+抽象的形容就是：把树形象地看成是柔软灵活的，抓住子结点$k_1$，使劲摇动它，在重力作用下，$k_1$就变成了新的根。
+
 ### 4.4.2 双旋转
 
+要将项为X的一个新结点插入到一棵AVL树T中去，我们递归地将X插入到T的相应的子树$T_{LR}$中。如果$T_{LR}$的高度不变，那么插入完成；否则，如果在T中出现高度不平衡，那么根据X以及T和$T_{LR}$中的项做适当的单旋转或双旋转，更新这些高度并解决好与树的其余部分的链接，从而完成插入。
+
+```c++
+struct AvlNode
+{
+	Comparable element;
+	AvlNode *left;
+	AvlNode *right;
+	int height;
+	AvlNode( const Comparable & theElement, AvlNode *lt, AvlNode *rt, int h=0)
+		: element(theElement), left(lt), right(rt), height(h)
+};
+
+// Return the height of node t or -1 if NULL
+int height(AvlNode *t) const{
+	return t==NULL ? -1:t->height;
+}
+
+// Internal method to insert into a subtree
+// x is the item to insert
+// t is the node that roots the subtree
+// Set the new root of the subtree
+void insert( const Comparable & x, AvlNode * & t)
+{
+	if(t==NULL)
+	{
+		t=new AvlNode(x, NULL, NULL);
+	}
+	else if(x<t->element)
+	{
+		insert(x,t->left);
+		if(height(t->left)-height(t->right)==2)
+			if(x<t->left->element)
+				rotateWithLeftChild(t);
+			else
+				doubleWithLeftChild(t);
+	}
+	else if(t->element<x)
+	{
+		insert(x,t->right);
+		if(height(t->right)-height(t->left)==2)
+			if(t->right->element<x)
+				rotateWithLeftChild(t);
+			else
+				doubleWithLeftChild(t);
+	}
+	else
+		;//Duplicate; do nothing
+	t->height=max(height(t->left),height(t->right))+1;
+}
+
+// Rotate binary tree node with left child
+// For AVL trees, this is a single rotation for case 1
+// Update heights, then set new root
+void rotateWithLeftChild(AvlNode * & k2)
+{
+	AvlNode *k1 = k2->left;
+	k2->left = k1->right;
+	k1->right = k2;
+	k2->height = max(height(k2->left), height(k2->right))+1;
+	k1->height = max(height(k1->left), k2->height)+1;
+	k2 = k1;
+}
+
+// Double rotate binary tree node: first left child
+// with its right child; then node k3 with new left child
+// For AVL trees, this is a double rotation for case 2
+// Update heights, then set new root
+void doubleWithLeftChild(AvlNode * & k3)
+{
+	rotateWithLeftChild(k3->left);
+	rotateWithLeftChild(k3);
+}
+```
+
+函数rotateWithLeftChild把左边的树变成右边的树，并返回指向新根的指针。该函数是对称的
+
 ## 4.5 伸展树
+
+伸展树保证从空树开始任意连续M次对树的操作最多花费$O(MlogN)$时间。不存在不好的输入序列
+
+当M次操作的序列总的最坏情形运行时间为$O(Mf(N))$时，我们就说它的**摊还**运行时间为$O(f(N))$
+
+一棵伸展树每次操作的摊还代价是$O(logN)$
+
+伸展树基于如下事实：对于二叉查找树而言，每次操作最坏情形时间$O(N)$并非不好，只要它相对不常发生就行。任何一次访问，即使发生$O(N)$，仍然可能非常快。累积的运行时间很重要
+
+只要有一个结点被访问，它就必须被移动；否则，一旦我们发现一个深层的结点，就有可能不断地对它进行访问
+
+基本想法：当一个结点被访问后，，它就要经过一系列AVL树的旋转被推到根上。
+
+### 4.5.1 一个简单的想法（不能直接使用）
+
+实施上面描述的重新构造的一种方法是执行单旋转，自底向上进行。这意味着将对访问路径上的每一个结点和它们的父结点实施旋转。
+
+使用这种策略将会存在一系列M个操作共需要$\Omega{M\cdot N}$的时间
+
+### 4.5.2 伸展
 
 ## 4.6 树的遍历
 
