@@ -564,6 +564,8 @@ void doubleWithLeftChild(AvlNode * & k3)
 
 ### 4.5.2 伸展
 
+
+
 ## 4.6 树的遍历
 
 ## 4.7 B树
