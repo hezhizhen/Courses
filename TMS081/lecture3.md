@@ -45,7 +45,7 @@ Irreducibility is the property that regardless the present state we can reach an
 
 ##### Aperiodic Markov chains
 
-- If a state $s_i$ have period 2 is the chain can be in $s_i$  every second time, that is on even or odd times depending on where we start, but not both
+- If a state $s_i$ have period is 2 the chain can be in $s_i$  every second time, that is on even or odd times depending on where we start, but not both
 - if a state has period 1, we say that it is aperiodic
 
 when considering periodicity we always look at the set of possible times we can be in a certain state
@@ -56,4 +56,4 @@ suppose we have an aperiodic Markov chain $(X_0,X_1,\dots)$ with state space $S=
 
 ##### Corollary 4.1
 
-Let $(X_0,X_1,\dots)$ be an irreducible and aperiodic Markov chain with state space $S=\{s_1,\dots,s_k\}$ and transition matrix $P$. Then there exists an $M<\infty$ such that $(P^n)_{i,j}>0$ for all $i,j\in\{1,\dots,k\}$ and all $n\geq N$
+Let $(X_0,X_1,\dots)$ be an irreducible and aperiodic Markov chain with state space $S=\{s_1,\dots,s_k\}$ and transition matrix $P$. Then there exists an $M<\infty$ such that $(P^n)_{i,j}>0$ for all $i,j\in\{1,\dots,k\}$ and all $n\geq M$
